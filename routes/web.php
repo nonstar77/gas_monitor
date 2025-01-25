@@ -14,11 +14,11 @@ use App\Models\SensorData;
 |
 */
 
-Route::get('/', function () {
+Route::get('/welcome', function () {
     return view('welcome');
 });
 
-Route::get('/monitoring', function () {
+Route::get('/', function () {
     $data = SensorData::latest()->get();
     return view('monitoring', compact('data'));
 });
