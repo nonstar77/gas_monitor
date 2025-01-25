@@ -39,7 +39,7 @@ Route::post('/sensor', function (Request $request) {
 
 // routes/api.php
 Route::get('/sensor', function () {
-    $sensorData = \App\Models\SensorData::latest()->get();  // Mengambil semua data sensor terbaru
+    $sensorData = SensorData::latest()->get();  // Mengambil semua data sensor terbaru
     return response()->json($sensorData);
 });
 
