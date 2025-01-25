@@ -3,21 +3,37 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\SensorData;
+use Illuminate\Http\Request;
 
 class SensorController extends Controller
 {
+    public function index()
+    {
+    $sensorData = SensorData::all();
+    return response()->json($sensorData);
+    }
+
     public function store(Request $request)
     {
+        // Validasi data yang diterima
         $request->validate([
-            'gas_value' => 'required|numeric',
+            'gas_value_mq4' => 'required|numeric',
+            'gas_value_mq6' => 'required|numeric',
+            'gas_value_mq8' => 'required|numeric',
         ]);
 
-        SensorData::create([
-            'gas_value' => $request->gas_value,
-        ]);
+        // Menyimpan data ke dalam database
+        $sensor = new SensorData();
+        $sensor->gas_value_mq4 = $request->gas_value_mq4;
+        $sensor->gas_value_mq6 = $request->gas_value_mq6;
+        $sensor->gas_value_mq8 = $request->gas_value_mq8;
+        $sensor->save();
 
-        return response()->json(['message' => 'Data stored successfully']);
+        // Mengembalikan response sukses
+        return response()->json(['message' => 'Data berhasil disimpan'], 200);
     }
+
+
 }
+

@@ -92,31 +92,50 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Gas Value</th>
+                    <th>Gas Value MQ4</th>
+                    <th>Gas Value MQ6</th>
+                    <th>Gas Value MQ8</th>
                     <th>Timestamp</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td colspan="3" class="loading">Loading data...</td>
+                    <td colspan="5" class="loading">Loading data...</td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-
     <script>
-        // Data untuk Chart
+        // Data untuk Chart dengan 3 subjek
         let chartData = {
             labels: [], // Timestamp
-            datasets: [{
-                label: 'Gas Value',
-                data: [], // Nilai gas
-                borderColor: '#ab1111',
-                backgroundColor: 'rgba(171, 17, 17, 0.5)',
-                fill: true,
-                tension: 0.4,
-            }]
+            datasets: [
+                {
+                    label: 'Gas Value MQ4',
+                    data: [], // Nilai gas untuk MQ4
+                    borderColor: '#1e90ff',
+                    backgroundColor: 'rgba(30, 144, 255, 0.5)',
+                    fill: true,
+                    tension: 0.5,
+                },
+                {
+                    label: 'Gas Value MQ6',
+                    data: [], // Nilai gas untuk MQ6
+                    borderColor: '#ab1111',
+                    backgroundColor: 'rgba(171, 17, 17, 0.5)',
+                    fill: true,
+                    tension: 0.5,
+                },
+                {
+                    label: 'Gas Value MQ8',
+                    data: [], // Nilai gas untuk MQ8
+                    borderColor: '#32cd32',
+                    backgroundColor: 'rgba(50, 205, 50, 0.5)',
+                    fill: true,
+                    tension: 0.5,
+                }
+            ]
         };
 
         // Konfigurasi Chart.js
@@ -146,50 +165,74 @@
 
         function fetchSensorData() {
             fetch('http://127.0.0.1:8000/api/sensor')  // Ganti dengan URL API Laravel Anda
-                .then(response => response.json())
-                .then(data => {
-                    // Perbarui tabel
-                    const tableBody = document.querySelector('#sensor-table tbody');
-                    tableBody.innerHTML = '';
-                    if (data.length === 0) {
-                        tableBody.innerHTML = '<tr><td colspan="3">No data available</td></tr>';
-                        return;
+                .then(response => {
+                    console.log('Response status:', response.status);  // Log response status
+
+                    // Check if the response is OK (status 200-299)
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.statusText);
                     }
 
-                    // Perbarui data chart
-                    chartData.labels = [];
-                    chartData.datasets[0].data = [];
+                    return response.text();  // Get the response as text to inspect it first
+                })
+                .then(data => {
+                    console.log('Raw response data:', data);  // Log the raw response
 
-                    data.forEach(item => {
-                        // Format timestamp menjadi hanya tanggal dan waktu
-                        const date = new Date(item.created_at);
-                        const formattedTimestamp = date.toLocaleString('en-US', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            hour12: false, // Tampilkan dalam format 24 jam
-                            timeZone: 'Asia/Jakarta',
+                    try {
+                        const jsonData = JSON.parse(data);  // Parse the raw data into JSON
+                        console.log('Parsed JSON data:', jsonData);
+
+                        // Perbarui tabel
+                        const tableBody = document.querySelector('#sensor-table tbody');
+                        tableBody.innerHTML = '';
+                        if (jsonData.length === 0) {
+                            tableBody.innerHTML = '<tr><td colspan="5">No data available</td></tr>';
+                            return;
+                        }
+
+                        // Perbarui data chart
+                        chartData.labels = [];
+                        chartData.datasets[0].data = [];
+                        chartData.datasets[1].data = [];
+                        chartData.datasets[2].data = [];
+
+                        jsonData.forEach(item => {
+                            // Format timestamp menjadi hanya tanggal dan waktu
+                            const date = new Date(item.created_at);
+                            const formattedTimestamp = date.toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: false, // Tampilkan dalam format 24 jam
+                                timeZone: 'Asia/Jakarta',
+                            });
+
+                            // Tambahkan data ke tabel
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${item.id}</td>
+                                <td>${item.gas_value_mq4}</td>
+                                <td>${item.gas_value_mq6}</td>
+                                <td>${item.gas_value_mq8}</td>
+                                <td>${formattedTimestamp}</td>
+                            `;
+                            tableBody.appendChild(row);
+
+                            // Tambahkan data ke chart untuk 3 subjek
+                            chartData.labels.push(formattedTimestamp);
+                            chartData.datasets[1].data.push(item.gas_value_mq4);  // MQ4
+                            chartData.datasets[0].data.push(item.gas_value_mq6);  // MQ6
+                            chartData.datasets[2].data.push(item.gas_value_mq8);  // MQ8
                         });
 
-                        // Tambahkan data ke tabel
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${item.id}</td>
-                            <td>${item.gas_value}</td>
-                            <td>${formattedTimestamp}</td>
-                        `;
-                        tableBody.appendChild(row);
-
-                        // Tambahkan data ke chart
-                        chartData.labels.push(formattedTimestamp);
-                        chartData.datasets[0].data.push(item.gas_value);
-                    });
-
-                    // Perbarui chart
-                    gasChart.update();
+                        // Perbarui chart
+                        gasChart.update();
+                    } catch (error) {
+                        console.error('Failed to parse JSON:', error);
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching sensor data:', error);
@@ -200,8 +243,9 @@
         // Ambil data saat halaman dimuat
         fetchSensorData();
 
-        // Perbarui data setiap 1 menit
-        setInterval(fetchSensorData, 60000);
+        // Perbarui data setiap 1 detik
+        setInterval(fetchSensorData, 1000);
     </script>
+
 </body>
 </html>

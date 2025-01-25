@@ -20,17 +20,22 @@ use App\Models\SensorData;
 Route::post('/sensor', function (Request $request) {
     // Validasi data yang diterima
     $validated = $request->validate([
-        'gas_value' => 'required|integer',
+        'gas_value_mq4' => 'required|numeric',
+        'gas_value_mq6' => 'required|numeric',
+        'gas_value_mq8' => 'required|numeric',
     ]);
 
     // Simpan data ke database
     $sensorData = SensorData::create([
-        'gas_value' => $validated['gas_value'],
+        'gas_value_mq4' => $validated['gas_value_mq4'],
+        'gas_value_mq6' => $validated['gas_value_mq6'],
+        'gas_value_mq8' => $validated['gas_value_mq8'],
     ]);
 
     // Kembali dengan respons JSON
     return response()->json(['message' => 'Data berhasil diterima', 'data' => $sensorData], 200);
 });
+
 
 // routes/api.php
 Route::get('/sensor', function () {
